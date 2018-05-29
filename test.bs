@@ -1,0 +1,9 @@
+var a = 123;
+var b;
+
+func main(args)
+{
+	var c;
+	
+	return 123;
+}
