@@ -504,7 +504,27 @@ parse_block :: proc(using p: ^Parser) -> ^Node
 			}
 			else
 			{
-				assert(false);
+				expr := parse_expr(p);
+				
+				op := p.current_token;
+				if match_token(p, TokenKind.EQUAL)
+				{
+					value := parse_expr(p);
+					expect(p, TokenKind.SEMICOLON);
+					stmt = make_assign(p, op, expr, value);
+				}
+				else
+				{
+					if expr.kind == NodeKind.CALL || expr.kind == NodeKind.METHODCALL || expr.kind == NodeKind.INCDEC
+					{
+						expect(p, TokenKind.SEMICOLON);
+						stmt = expr;
+					}
+					else
+					{
+						parser_error(p, "Unexpected expression in block!");
+					}
+				}
 			}
 			
 			append(&stmts, stmt);

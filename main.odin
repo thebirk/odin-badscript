@@ -183,6 +183,19 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		print_node(i, n.incdec.expr);
 		dedent(i);
 	}
+	case ASSIGN:
+	{
+		print_indent(i);
+		printf("lhs:\n");
+		indent(i);
+		print_node(i, n.assign.lhs);
+		dedent(i);
+		print_indent(i);
+		printf("rhs:\n");
+		indent(i);
+		print_node(i, n.assign.rhs);
+		dedent(i);
+	}
 	}
 	dedent(i);
 }

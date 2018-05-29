@@ -17,6 +17,8 @@ func main(args)
 		return 2;
 	}
 	
+	b = "a " + args[1];
+	
 	var i = 10;
 	while i-- {
 		//println("i: ", i);

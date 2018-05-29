@@ -22,6 +22,9 @@ NodeKind :: enum
 	BREAK,
 	IF,
 	WHILE,
+	ASSIGN,
+	CALL,
+	METHODCALL,
 }
 
 Node :: struct
@@ -80,6 +83,10 @@ Node :: struct
 			cond: ^Node,
 			block: ^Node,	
 		},
+		assign: struct {
+			lhs: ^Node,
+			rhs: ^Node,	
+		},
 	}
 }
 
@@ -87,6 +94,16 @@ alloc_node :: proc(using p: ^Parser, kind: NodeKind) -> ^Node
 {
 	n := new(Node);
 	n.kind = kind;
+	return n;
+}
+
+make_assign :: proc(using p: ^Parser, loc: Token, expr: ^Node, value: ^Node) -> ^Node
+{
+	n := alloc_node(p, NodeKind.ASSIGN);
+	n.loc = loc.loc;
+	
+	n.assign.lhs = expr;
+	n.assign.rhs = value;
 	return n;
 }
 
