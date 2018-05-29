@@ -5,5 +5,17 @@ func main(args)
 {
 	var c;
 	
-	return 123;
+	if a {
+		return;
+	}
+	else if a + 2 > 23
+	{
+		return "sdf";
+	}
+	else
+	{
+		return 2;
+	}
+	
+	return false;
 }

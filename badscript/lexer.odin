@@ -21,6 +21,7 @@ TokenKind :: enum
 	CONTINUE,
 	BREAK,
 	IF,
+	ELSE,
 	WHILE,
 	FOR,
 	TRUE,
@@ -55,6 +56,7 @@ func_runes     := []rune {'f', 'u', 'n', 'c'};
 var_runes      := []rune {'v', 'a', 'r'};
 return_runes   := []rune {'r', 'e', 't', 'u', 'r', 'n'};
 if_runes       := []rune {'i', 'f'};
+else_runes       := []rune {'e', 'l', 's', 'e'};
 continue_runes := []rune {'c', 'o', 'n', 't', 'i', 'n', 'u', 'e'};
 break_runes    := []rune {'b', 'r', 'e', 'a', 'k'};
 true_runes     := []rune {'t', 'r', 'u', 'e'};
@@ -342,6 +344,10 @@ lex :: proc(using lexer: ^Lexer)
 			else if _compare_slices(t.lexeme, null_runes)
 			{
 				t.kind = TokenKind.NULL;
+			}
+			else if _compare_slices(t.lexeme, else_runes)
+			{
+				t.kind = TokenKind.ELSE;
 			}
 		}
 	}

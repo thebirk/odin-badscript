@@ -137,7 +137,25 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		print_indent(i);
 		printf("expr:\n");
 		indent(i);
-		print_node(i, n._var.expr);
+		print_node(i, n.ret.expr);
+		dedent(i);
+	} break;
+	case IF:
+	{
+		print_indent(i);
+		printf("cond:\n");
+		indent(i);
+		print_node(i, n._if.cond);
+		dedent(i);
+		print_indent(i);
+		printf("block:\n");
+		indent(i);
+		print_node(i, n._if.block);
+		dedent(i);
+		print_indent(i);
+		printf("else_block:\n");
+		indent(i);
+		print_node(i, n._if.else_block);
 		dedent(i);
 	} break;
 	}

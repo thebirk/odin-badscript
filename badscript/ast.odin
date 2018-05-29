@@ -18,6 +18,9 @@ NodeKind :: enum
 	FUNC,
 	BLOCK,
 	RETURN,
+	CONTINUE,
+	BREAK,
+	IF,
 }
 
 Node :: struct
@@ -67,6 +70,11 @@ Node :: struct
 		ret: struct {
 			expr: ^Node,
 		},
+		_if: struct {
+			cond: ^Node,
+			block: ^Node,
+			else_block: ^Node,
+		},
 	}
 }
 
@@ -74,6 +82,33 @@ alloc_node :: proc(using p: ^Parser, kind: NodeKind) -> ^Node
 {
 	n := new(Node);
 	n.kind = kind;
+	return n;
+}
+
+make_if :: proc(using p: ^Parser, loc: Token, cond: ^Node, block: ^Node, else_block: ^Node) -> ^Node
+{
+	n := alloc_node(p, NodeKind.IF);
+	n.loc = loc.loc;
+	
+	n._if.cond = cond;
+	n._if.block = block;
+	n._if.else_block = else_block;
+	return n;
+}
+
+make_break :: proc(using p: ^Parser, loc: Token) -> ^Node
+{
+	n := alloc_node(p, NodeKind.BREAK);
+	n.loc = loc.loc;
+	
+	return n;
+}
+
+make_continue :: proc(using p: ^Parser, loc: Token) -> ^Node
+{
+	n := alloc_node(p, NodeKind.CONTINUE);
+	n.loc = loc.loc;
+	
 	return n;
 }
 

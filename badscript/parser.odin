@@ -378,6 +378,72 @@ parse_return :: proc(using p: ^Parser) -> ^Node
 	}
 }
 
+parse_continue :: proc(using p: ^Parser) -> ^Node
+{
+	con := p.current_token;
+	if match_token(p, TokenKind.CONTINUE)
+	{
+		expect(p, TokenKind.SEMICOLON);
+		
+		return make_continue(p, con);
+	}
+	else
+	{
+		assert(false, "whoopsie");
+		return nil;
+	}
+}
+
+parse_break :: proc(using p: ^Parser) -> ^Node
+{
+	brea := p.current_token;
+	if match_token(p, TokenKind.BREAK)
+	{
+		expect(p, TokenKind.SEMICOLON);
+		
+		return make_break(p, brea);
+	}
+	else
+	{
+		assert(false, "whoopsie");
+		return nil;
+	}
+}
+
+parse_if :: proc(using p: ^Parser) -> ^Node
+{
+	_if := p.current_token;
+	if match_token(p, TokenKind.IF)
+	{
+		cond := parse_expr(p);
+		block := parse_block(p);
+		else_block: ^Node = nil;
+		
+		if match_token(p, TokenKind.ELSE)
+		{
+			if is_token(p, TokenKind.LBRACE)
+			{
+				else_block = parse_block(p);
+			}
+			else if is_token(p, TokenKind.IF)
+			{
+				else_block = parse_if(p);
+			}
+			else
+			{
+				parser_error(p, "Expected if or block after else");
+			}
+		}
+		
+		return make_if(p, _if, cond, block, else_block);
+	}
+	else
+	{
+		assert(false, "whoopsie");
+		return nil;
+	}
+}
+
 parse_block :: proc(using p: ^Parser) -> ^Node
 {
 	lbrace := p.current_token;
@@ -390,7 +456,7 @@ parse_block :: proc(using p: ^Parser) -> ^Node
 			
 			if is_token(p, TokenKind.IF)
 			{
-				assert(false);
+				stmt = parse_if(p);
 			}
 			else if is_token(p, TokenKind.VAR)
 			{
@@ -406,11 +472,11 @@ parse_block :: proc(using p: ^Parser) -> ^Node
 			}
 			else if is_token(p, TokenKind.CONTINUE)
 			{
-				assert(false);
+				stmt = parse_continue(p);
 			}
 			else if is_token(p, TokenKind.BREAK)
 			{
-				assert(false);
+				stmt = parse_break(p);
 			}
 			else if is_token(p, TokenKind.WHILE)
 			{
@@ -453,6 +519,10 @@ parse :: proc(using p: ^Parser) -> []^Node
 		else if is_token(p, TokenKind.FUNC)
 		{
 			stmt = parse_func(p);
+		}
+		else if is_token(p, TokenKind.IF)
+		{
+			stmt = parse_if(p);
 		}
 		else if is_token(p, TokenKind.SEMICOLON)
 		{
