@@ -125,7 +125,7 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		print_indent(i);
 		printf("name: %v\n", n.func.name);
 		print_indent(i);
-		printf("args: %v\n", n.func.args);
+		printf("args (%d): %v\n", len(n.func.args), n.func.args);
 		print_indent(i);
 		printf("block:\n");
 		indent(i);
@@ -204,8 +204,36 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		print_node(i, n.call.expr);
 		dedent(i);
 		print_indent(i);
-		printf("args:\n");	
+		printf("args (%d):\n", len(n.call.args));	
 		for arg in n.call.args
+		{
+			indent(i);
+			print_node(i, arg);
+			dedent(i);
+		}
+	}
+	case FIELD:
+	{
+		print_indent(i);
+		printf("expr:\n");
+		indent(i);
+		print_node(i, n.field.expr);
+		dedent(i);
+		print_indent(i);
+		printf("name: %v\n", n.field.name);
+	}
+	case METHODCALL:
+	{
+		print_indent(i);
+		printf("expr:\n");
+		indent(i);
+		print_node(i, n.methodcall.expr);
+		dedent(i);
+		print_indent(i);
+		printf("name: %v\n", n.methodcall.name);
+		print_indent(i);
+		printf("args (%d):\n", len(n.methodcall.args));	
+		for arg in n.methodcall.args
 		{
 			indent(i);
 			print_node(i, arg);

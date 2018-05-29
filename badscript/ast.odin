@@ -25,6 +25,7 @@ NodeKind :: enum
 	ASSIGN,
 	CALL,
 	METHODCALL,
+	FIELD,
 }
 
 Node :: struct
@@ -91,6 +92,15 @@ Node :: struct
 			expr: ^Node,
 			args: []^Node,
 		},
+		field: struct {
+			expr: ^Node,
+			name: []rune,
+		},
+		methodcall: struct {
+			expr: ^Node,
+			name: []rune,
+			args: []^Node,
+		},
 	}
 }
 
@@ -99,6 +109,27 @@ alloc_node :: proc(using p: ^Parser, kind: NodeKind) -> ^Node
 	n := new(Node);
 	n.kind = kind;
 	return n;
+}
+
+make_methodcall :: proc(using p: ^Parser, loc: Token, expr: ^Node, name: Token, args: []^Node) -> ^Node
+{
+	n := alloc_node(p, NodeKind.METHODCALL);
+	n.loc = loc.loc;
+	
+	n.methodcall.expr = expr;
+	n.methodcall.name = name.lexeme;
+	n.methodcall.args = args;
+	return n;
+}
+
+make_field :: proc(using p: ^Parser, loc: Token, name: Token, expr: ^Node) -> ^Node
+{
+	n := alloc_node(p, NodeKind.FIELD);
+	n.loc = loc.loc;
+	
+	n.field.expr = expr;
+	n.field.name = name.lexeme;
+	return n;	
 }
 
 make_call :: proc(using p: ^Parser, loc: Token, expr: ^Node, args: []^Node) -> ^Node

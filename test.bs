@@ -19,6 +19,11 @@ func main(args)
 	
 	b = "a " + args[1];
 	
+	var sometable;
+	sometable.a = 123;
+	sometable:println("help");
+	sometable:len();
+	
 	var i = 10;
 	while i-- {
 		println("i: ", i);

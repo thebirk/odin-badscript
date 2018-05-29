@@ -172,12 +172,44 @@ parse_expr_base :: proc(using p: ^Parser) -> ^Node
 		else if match_token(p, TokenKind.DOT)
 		{
 			// expr.t
-			assert(false);
+			t := p.current_token;
+			expect(p, TokenKind.IDENT);
+			expr = make_field(p, op, t, expr);
 		}
 		else if match_token(p, TokenKind.COLON)
 		{
-			// expr:
-			assert(false);
+			// expr:t(
+			t := p.current_token;
+			expect(p, TokenKind.IDENT);
+			
+			if match_token(p, TokenKind.LPAR)
+			{
+				args: [dynamic]^Node;
+				
+				if match_token(p, TokenKind.RPAR)
+				{
+					// expr:t()
+					expr = make_methodcall(p, op, expr, t, args[..]);
+				}
+				else
+				{
+					// expr:t(...
+					first := true;
+					for first || match_token(p, TokenKind.COMMA)
+					{
+						if first do first = false;
+						arg_expr := parse_expr(p);
+						append(&args, arg_expr);
+					}
+					expect(p, TokenKind.RPAR);
+					
+					expr = make_methodcall(p, op, expr, t, args[..]);
+				}
+			}
+			else
+			{
+				parser_error(p, "Expected arguemnt list after ':' operator");
+			}
 		}
 		else if match_token(p, TokenKind.INCREMENT)
 		{
