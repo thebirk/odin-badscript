@@ -196,6 +196,22 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		print_node(i, n.assign.rhs);
 		dedent(i);
 	}
+	case CALL:
+	{
+		print_indent(i);
+		printf("expr:\n");
+		indent(i);
+		print_node(i, n.call.expr);
+		dedent(i);
+		print_indent(i);
+		printf("args:\n");	
+		for arg in n.call.args
+		{
+			indent(i);
+			print_node(i, arg);
+			dedent(i);
+		}
+	}
 	}
 	dedent(i);
 }

@@ -87,6 +87,10 @@ Node :: struct
 			lhs: ^Node,
 			rhs: ^Node,	
 		},
+		call: struct {
+			expr: ^Node,
+			args: []^Node,
+		},
 	}
 }
 
@@ -94,6 +98,16 @@ alloc_node :: proc(using p: ^Parser, kind: NodeKind) -> ^Node
 {
 	n := new(Node);
 	n.kind = kind;
+	return n;
+}
+
+make_call :: proc(using p: ^Parser, loc: Token, expr: ^Node, args: []^Node) -> ^Node
+{
+	n := alloc_node(p, NodeKind.CALL);
+	n.loc = loc.loc;
+	
+	n.call.expr = expr;
+	n.call.args = args;
 	return n;
 }
 

@@ -148,7 +148,26 @@ parse_expr_base :: proc(using p: ^Parser) -> ^Node
 		else if match_token(p, TokenKind.LPAR)
 		{
 			// expr(
-			assert(false);
+			args: [dynamic]^Node;
+			if match_token(p, TokenKind.RPAR)
+			{
+				// expr()
+				expr = make_call(p, op, expr, args[..]);
+			}
+			else
+			{
+				// expr(...
+				first := true;
+				for first || match_token(p, TokenKind.COMMA)
+				{
+					if first do first = false;
+					arg_expr := parse_expr(p);
+					append(&args, arg_expr);
+				}
+				expect(p, TokenKind.RPAR);
+				
+				expr = make_call(p, op, expr, args[..]);
+			}
 		}
 		else if match_token(p, TokenKind.DOT)
 		{

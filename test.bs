@@ -21,7 +21,7 @@ func main(args)
 	
 	var i = 10;
 	while i-- {
-		//println("i: ", i);
+		println("i: ", i);
 	}
 	
 	return false;
