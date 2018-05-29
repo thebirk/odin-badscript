@@ -56,7 +56,8 @@ func_runes     := []rune {'f', 'u', 'n', 'c'};
 var_runes      := []rune {'v', 'a', 'r'};
 return_runes   := []rune {'r', 'e', 't', 'u', 'r', 'n'};
 if_runes       := []rune {'i', 'f'};
-else_runes       := []rune {'e', 'l', 's', 'e'};
+else_runes     := []rune {'e', 'l', 's', 'e'};
+while_runes    := []rune {'w', 'h', 'i', 'l', 'e'};
 continue_runes := []rune {'c', 'o', 'n', 't', 'i', 'n', 'u', 'e'};
 break_runes    := []rune {'b', 'r', 'e', 'a', 'k'};
 true_runes     := []rune {'t', 'r', 'u', 'e'};
@@ -348,6 +349,10 @@ lex :: proc(using lexer: ^Lexer)
 			else if _compare_slices(t.lexeme, else_runes)
 			{
 				t.kind = TokenKind.ELSE;
+			}
+			else if _compare_slices(t.lexeme, while_runes)
+			{
+				t.kind = TokenKind.WHILE;
 			}
 		}
 	}

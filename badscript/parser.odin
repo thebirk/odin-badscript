@@ -444,6 +444,22 @@ parse_if :: proc(using p: ^Parser) -> ^Node
 	}
 }
 
+parse_while :: proc(using p: ^Parser) -> ^Node
+{
+	_while := p.current_token;
+	if match_token(p, TokenKind.WHILE)
+	{
+		cond := parse_expr(p);
+		block := parse_block(p);
+		return make_while(p, _while, cond, block);
+	}
+	else
+	{
+		assert(false, "whoopsie");
+		return nil;
+	}
+}
+
 parse_block :: proc(using p: ^Parser) -> ^Node
 {
 	lbrace := p.current_token;
@@ -480,7 +496,7 @@ parse_block :: proc(using p: ^Parser) -> ^Node
 			}
 			else if is_token(p, TokenKind.WHILE)
 			{
-				assert(false);	
+				stmt = parse_while(p);
 			}
 			else if match_token(p, TokenKind.SEMICOLON)
 			{
@@ -519,10 +535,6 @@ parse :: proc(using p: ^Parser) -> []^Node
 		else if is_token(p, TokenKind.FUNC)
 		{
 			stmt = parse_func(p);
-		}
-		else if is_token(p, TokenKind.IF)
-		{
-			stmt = parse_if(p);
 		}
 		else if is_token(p, TokenKind.SEMICOLON)
 		{

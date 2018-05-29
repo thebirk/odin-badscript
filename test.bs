@@ -17,5 +17,10 @@ func main(args)
 		return 2;
 	}
 	
+	var i = 10;
+	while i-- {
+		//println("i: ", i);
+	}
+	
 	return false;
 }

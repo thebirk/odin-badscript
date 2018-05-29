@@ -50,17 +50,17 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 	{
 		print_indent(i);
 		printf("name: %v\n", n.name.name);
-	} break;
+	}
 	case STRING:
 	{
 		print_indent(i);
 		printf("string: %v\n", n.str.str);
-	} break;
+	}
 	case NUMBER:
 	{
 		print_indent(i);
 		printf("value: %f\n", n.number.value);
-	} break;
+	}
 	case BINARY:
 	{
 		print_indent(i);
@@ -75,7 +75,7 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		indent(i);
 		print_node(i, n.binary.rhs);
 		dedent(i);
-	} break;
+	}
 	case UNARY:
 	{
 		print_indent(i);
@@ -85,7 +85,7 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		indent(i);
 		print_node(i, n.unary.expr);
 		dedent(i);
-	} break;
+	}
 	case INDEX:
 	{
 		print_indent(i);
@@ -98,7 +98,7 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		indent(i);
 		print_node(i, n.index.index_expr);
 		dedent(i);
-	} break;
+	}
 	case VAR:
 	{
 		print_indent(i);
@@ -108,7 +108,7 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		indent(i);
 		print_node(i, n._var.expr);
 		dedent(i);
-	} break;
+	}
 	case BLOCK:
 	{
 		print_indent(i);
@@ -119,7 +119,7 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 			print_node(i, stmt);
 			dedent(i);
 		}
-	} break;
+	}
 	case FUNC:
 	{
 		print_indent(i);
@@ -131,7 +131,7 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		indent(i);
 		print_node(i, n.func.block);
 		dedent(i);
-	} break;
+	}
 	case RETURN:
 	{
 		print_indent(i);
@@ -139,7 +139,7 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		indent(i);
 		print_node(i, n.ret.expr);
 		dedent(i);
-	} break;
+	}
 	case IF:
 	{
 		print_indent(i);
@@ -157,7 +157,32 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		indent(i);
 		print_node(i, n._if.else_block);
 		dedent(i);
-	} break;
+	}
+	case WHILE:
+	{
+		print_indent(i);
+		printf("cond:\n");
+		indent(i);
+		print_node(i, n._while.cond);
+		dedent(i);
+		print_indent(i);
+		printf("block:\n");
+		indent(i);
+		print_node(i, n._while.block);
+		dedent(i);
+	}
+	case INCDEC:
+	{
+		print_indent(i);
+		printf("op: %v\n", n.incdec.op);
+		print_indent(i);
+		printf("post: %v\n", n.incdec.post);
+		print_indent(i);
+		printf("expr:\n");
+		indent(i);
+		print_node(i, n.incdec.expr);
+		dedent(i);
+	}
 	}
 	dedent(i);
 }

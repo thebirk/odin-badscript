@@ -21,6 +21,7 @@ NodeKind :: enum
 	CONTINUE,
 	BREAK,
 	IF,
+	WHILE,
 }
 
 Node :: struct
@@ -75,6 +76,10 @@ Node :: struct
 			block: ^Node,
 			else_block: ^Node,
 		},
+		_while: struct {
+			cond: ^Node,
+			block: ^Node,	
+		},
 	}
 }
 
@@ -82,6 +87,16 @@ alloc_node :: proc(using p: ^Parser, kind: NodeKind) -> ^Node
 {
 	n := new(Node);
 	n.kind = kind;
+	return n;
+}
+
+make_while :: proc(using p: ^Parser, loc: Token, cond: ^Node, block: ^Node) -> ^Node
+{
+	n := alloc_node(p, NodeKind.WHILE);
+	n.loc = loc.loc;
+	
+	n._while.cond = cond;
+	n._while.block = block;
 	return n;
 }
 
