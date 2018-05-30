@@ -26,6 +26,7 @@ NodeKind :: enum
 	CALL,
 	METHODCALL,
 	FIELD,
+	ANONFUNC,
 }
 
 Node :: struct
@@ -101,6 +102,10 @@ Node :: struct
 			name: []rune,
 			args: []^Node,
 		},
+		anonfunc: struct {
+			args: [][]rune,
+			block: ^Node,	
+		},
 	}
 }
 
@@ -108,6 +113,16 @@ alloc_node :: proc(using p: ^Parser, kind: NodeKind) -> ^Node
 {
 	n := new(Node);
 	n.kind = kind;
+	return n;
+}
+
+make_anonfunc :: proc(using p: ^Parser, loc: Token, args: [][]rune, block: ^Node) -> ^Node
+{
+	n := alloc_node(p, NodeKind.ANONFUNC);
+	n.loc = loc.loc;
+	
+	n.anonfunc.args = args;
+	n.anonfunc.block = block;
 	return n;
 }
 

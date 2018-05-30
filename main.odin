@@ -240,6 +240,16 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 			dedent(i);
 		}
 	}
+	case ANONFUNC:
+	{
+		print_indent(i);
+		printf("args (%d): %v\n", len(n.anonfunc.args), n.anonfunc.args);
+		print_indent(i);
+		printf("block:\n");
+		indent(i);
+		print_node(i, n.anonfunc.block);
+		dedent(i);
+	}
 	}
 	dedent(i);
 }

@@ -71,11 +71,54 @@ expect :: proc(using p: ^Parser, kind: TokenKind)
 	parser_error(p, "Expected '%v' got '%v'", kind, p.current_token.kind);
 }
 
+find_rune_from_right :: proc(s: []rune, offset: int, r: rune) -> int
+{
+	for offset >= 0 && s[offset] != r
+	{
+		offset -= 1;
+	}
+	return offset;
+}
+
+find_rune_from_left :: proc(s: []rune, offset: int, r: rune) -> int
+{
+	for offset < len(s) && s[offset] != r
+	{
+		offset += 1;
+	}
+	return offset;
+}
+
 parser_error :: proc(using parser: ^Parser, fmt_str: string, args: ...any)
 {
-	fmt.printf("%s(%d:%d) Parser error: ", parser.lexer.filename, parser.current_token.loc.line, parser.current_token.loc.char);
+	fmt.printf("%s(%d:%d) Parser error: ", parser.lexer.filename, parser.current_token.loc.line, parser.current_token.loc.char);	
 	fmt.printf(fmt_str, ...args);
+	fmt.printf("\n\n");
+	
+	start := find_rune_from_right(parser.lexer.data[..], parser.current_token.loc.fileoffset, '\n');
+	end := find_rune_from_left(parser.lexer.data[..], parser.current_token.loc.fileoffset, '\n');
+	if lexer.data[start] == '\n' do start += 1;	
+	if lexer.data[end] == '\n' do end -= 1;
+	output := parser.lexer.data[start..end+1];
+	for r in output
+	{
+		fmt.printf("%r", r);
+	}
 	fmt.printf("\n");
+	
+	for i := start; i < parser.current_token.loc.fileoffset; i += 1
+	{
+		if lexer.data[i] == '\t'
+		{
+			fmt.printf("\t");
+		}
+		else
+		{
+			fmt.printf(" ");
+		}
+	}
+	fmt.printf("^\n");
+	
 	os.exit(1);
 }
 
@@ -115,7 +158,36 @@ parse_expr_operand :: proc(using p: ^Parser) -> ^Node
 	}
 	else if match_token(p, TokenKind.FUNC)
 	{
-		assert(false);	
+		if !match_token(p, TokenKind.LPAR)
+		{
+			parser_error(p, "Expected '(' after 'func' while parsing anonymous function");
+			return nil;
+		}
+		
+		args: [dynamic][]rune;
+		
+		if !is_token(p, TokenKind.RPAR)
+		{
+			first := true;
+			for first || match_token(p, TokenKind.COMMA)
+			{
+				if first do first = false;
+				
+				if is_token(p, TokenKind.IDENT)
+				{
+					append(&args, p.current_token.lexeme);
+					next_token(p);
+				}
+				else
+				{
+					parser_error(p, "Expected identifier while parsing argument list got '%v'", p.current_token.kind);
+				}
+			}
+		}
+		expect(p, TokenKind.RPAR);
+		
+		block := parse_block(p);
+		return make_anonfunc(p, t, args[..], block);
 	}
 	else if match_token(p, TokenKind.LBRACE)
 	{

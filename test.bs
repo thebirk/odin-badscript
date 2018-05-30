@@ -17,6 +17,11 @@ func main(args)
 		return 2;
 	}
 	
+	var anon = func oops(n) {
+		println("Hello from anon function: ", n);	
+	};
+	anon(1337);
+	
 	b = "a " + args[1];
 	
 	var sometable;
