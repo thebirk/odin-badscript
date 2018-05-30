@@ -317,9 +317,43 @@ main :: proc()
 	
 	a := bs.new_value(bs.Number);
 	
+	vm := bs.make_vm();
+	append(&vm.globals, nil);
+	{
+		append(&vm.code, bs.Bytecode.PUSHNUMBER);
+		bs.write_f64(vm, 1.0);
+		append(&vm.code, bs.Bytecode.PUSHNUMBER);
+		bs.write_f64(vm, 1.0);
+		append(&vm.code, bs.Bytecode.ADD);
+	}
+	{
+		append(&vm.code, bs.Bytecode.SETGLOBAL);
+		append(&vm.code, 0);
+	}
+	{
+		append(&vm.code, bs.Bytecode.PUSHNUMBER);
+		bs.write_f64(vm, 5.0);
+		append(&vm.code, bs.Bytecode.PUSHNUMBER);
+		bs.write_f64(vm, 5.0);
+		append(&vm.code, bs.Bytecode.ADD);
+	}
+	{
+		append(&vm.code, bs.Bytecode.GETGLOBAL);
+		append(&vm.code, 0);
+	}
+	{
+		append(&vm.code, bs.Bytecode.ADD);
+	}
+	append(&vm.code, bs.Bytecode.STOP);
+	stack := bs.run(vm);
+	for v, i in stack
+	{
+		printf("[%v]: %v\n", i, v^);
+	}
+	
 	i := Indenter{0, 4};
 	for n in nodes
 	{
-		print_node(&i, n);
+		//print_node(&i, n);
 	}
 }

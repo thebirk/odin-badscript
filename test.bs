@@ -17,7 +17,7 @@ func main(args)
 		return 2;
 	}
 	
-	var anon = func (n) {
+	var anon = func(n) {
 		println("Hello from anon function: ", n);
 	};
 	anon(1337);
