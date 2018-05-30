@@ -27,6 +27,21 @@ NodeKind :: enum
 	METHODCALL,
 	FIELD,
 	ANONFUNC,
+	TABLE,
+}
+
+TableEntryKind :: enum
+{
+	Normal,
+	Key,
+	Index,
+}
+
+TableEntry :: struct
+{
+	kind: TableEntryKind,
+	expr: ^Node,
+	key: ^Node,
 }
 
 Node :: struct
@@ -106,6 +121,9 @@ Node :: struct
 			args: [][]rune,
 			block: ^Node,	
 		},
+		table: struct {
+			entries: []TableEntry,
+		},
 	}
 }
 
@@ -113,6 +131,15 @@ alloc_node :: proc(using p: ^Parser, kind: NodeKind) -> ^Node
 {
 	n := new(Node);
 	n.kind = kind;
+	return n;
+}
+
+make_table :: proc(using p: ^Parser, loc: Token, entries: []TableEntry) -> ^Node
+{
+	n := alloc_node(p, NodeKind.TABLE);
+	n.loc = loc.loc;
+	
+	n.table.entries = entries;
 	return n;
 }
 

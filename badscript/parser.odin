@@ -191,7 +191,57 @@ parse_expr_operand :: proc(using p: ^Parser) -> ^Node
 	}
 	else if match_token(p, TokenKind.LBRACE)
 	{
-		assert(false);
+		entries: [dynamic]TableEntry;
+		
+		if match_token(p, TokenKind.RBRACE)
+		{
+			return make_table(p, t, entries[..]);
+		}
+		
+		first := true;
+		for first || (!is_token(p, TokenKind.RBRACE) && match_token(p, TokenKind.COMMA))
+		{
+			if first do first = false;
+			
+			if is_token(p, TokenKind.RBRACE)
+			{
+				// We allow one trailing comma
+				break;
+			}
+			
+			if match_token(p, TokenKind.LBRACKET)
+			{
+				index := parse_expr(p);
+				expect(p, TokenKind.RBRACKET);
+				
+				expect(p, TokenKind.EQUAL);
+				
+				value := parse_expr(p);
+				append(&entries, TableEntry{kind = TableEntryKind.Index, key = index, expr = value});
+			}
+			else
+			{
+				expr := parse_expr(p);
+				
+				if match_token(p, TokenKind.EQUAL)
+				{
+					value := parse_expr(p);
+					append(&entries, TableEntry{kind = TableEntryKind.Key, key = expr, expr = value});
+				}
+				else
+				{
+					append(&entries, TableEntry{kind = TableEntryKind.Normal, expr = expr});
+				}
+			}
+		}
+		
+		if !match_token(p, TokenKind.RBRACE)
+		{
+			parser_error(p, "Expected ',' or '}' but got '%v'!", p.current_token.kind);
+			return nil;
+		}
+		
+		return make_table(p, t, entries[..]);
 	}
 	else
 	{

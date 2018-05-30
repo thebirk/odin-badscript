@@ -250,6 +250,57 @@ print_node :: proc(using i: ^Indenter, n: ^bs.Node)
 		print_node(i, n.anonfunc.block);
 		dedent(i);
 	}
+	case TABLE:
+	{
+		print_indent(i);
+		printf("entries (%d)\n", len(n.table.entries));
+		indent(i);
+		for entry, it in n.table.entries
+		{
+			print_indent(i);
+			printf("(%d) %v\n", it, entry.kind);
+			indent(i);
+			using bs.TableEntryKind;
+			switch entry.kind {
+			case Normal:
+			{
+				print_indent(i);
+				printf("expr:\n");
+				indent(i);
+				print_node(i, entry.expr);
+				dedent(i);
+			}
+			case Index:
+			{
+				print_indent(i);
+				printf("index:\n");
+				indent(i);
+				print_node(i, entry.key);
+				dedent(i);
+				print_indent(i);
+				printf("expr:\n");
+				indent(i);
+				print_node(i, entry.expr);
+				dedent(i);
+			}
+			case Key:
+			{
+				print_indent(i);
+				printf("key:\n");
+				indent(i);
+				print_node(i, entry.key);
+				dedent(i);
+				print_indent(i);
+				printf("expr:\n");
+				indent(i);
+				print_node(i, entry.expr);
+				dedent(i);
+			}	
+			}
+			dedent(i);
+		}
+		dedent(i);
+	}
 	}
 	dedent(i);
 }

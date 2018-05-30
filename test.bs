@@ -17,14 +17,18 @@ func main(args)
 		return 2;
 	}
 	
-	var anon = func oops(n) {
-		println("Hello from anon function: ", n);	
+	var anon = func (n) {
+		println("Hello from anon function: ", n);
 	};
 	anon(1337);
 	
 	b = "a " + args[1];
 	
-	var sometable;
+	var sometable = {
+		a,
+		test = 321,
+		[2+2] = 4,
+	};
 	sometable.a = 123;
 	sometable:println("help");
 	sometable:len();
