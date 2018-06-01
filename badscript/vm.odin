@@ -60,19 +60,26 @@ Bytecode :: enum u8
 // We should have some sort of frame call stack
 VirtualMachine :: struct
 {
-	code: [dynamic]Bytecode,
+	code: []Bytecode,
 	stack: [dynamic]^Value,
 	globals: [dynamic]^Value,
 	ip: int,
 	running: bool,
 }
 
-make_vm :: proc() -> ^VirtualMachine
+make_vm :: proc(code: []Bytecode, num_globals: int) -> ^VirtualMachine
 {
 	vm := new(VirtualMachine);
-	vm.ip = 0;		
+	vm.code = code;
+	vm.ip = 0;
+	reserve(&vm.globals, num_globals);
+	for i in 0..num_globals
+	{
+		append(&vm.globals, nil);
+	}
 	return vm;
 }
+
 
 runtime_error :: proc(using vm: ^VirtualMachine)
 {
@@ -80,12 +87,12 @@ runtime_error :: proc(using vm: ^VirtualMachine)
 	assert(false);
 }
 
-write_f64 :: proc(using vm: ^VirtualMachine, number: f64)
+write_f64 :: proc(code: ^[dynamic]Bytecode, number: f64)
 {
 	v := transmute(u64)number;
 	for i in 0..8
 	{
-		append(&code, cast(Bytecode) (v & 0xFF));
+		append(code, cast(Bytecode) (v & 0xFF));
 		v = v >> 8;
 	}
 }

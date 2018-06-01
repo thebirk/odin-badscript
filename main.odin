@@ -313,42 +313,16 @@ main :: proc()
 		printf("%v\n", t.kind);
 	}*/
 	nodes := bs.parse(parser);
-	//fmt.printf("%v\n", nodes[0]^);
 	
-	a := bs.new_value(bs.Number);
-	
-	vm := bs.make_vm();
-	append(&vm.globals, nil);
+	program := bs.make_program(parser.lexer.filename, nodes);
+	vm := bs.make_vm(program.code[..], len(program.global_scope.variables));
+	if true
 	{
-		append(&vm.code, bs.Bytecode.PUSHNUMBER);
-		bs.write_f64(vm, 1.0);
-		append(&vm.code, bs.Bytecode.PUSHNUMBER);
-		bs.write_f64(vm, 1.0);
-		append(&vm.code, bs.Bytecode.ADD);
-	}
-	{
-		append(&vm.code, bs.Bytecode.SETGLOBAL);
-		append(&vm.code, 0);
-	}
-	{
-		append(&vm.code, bs.Bytecode.PUSHNUMBER);
-		bs.write_f64(vm, 5.0);
-		append(&vm.code, bs.Bytecode.PUSHNUMBER);
-		bs.write_f64(vm, 5.0);
-		append(&vm.code, bs.Bytecode.ADD);
-	}
-	{
-		append(&vm.code, bs.Bytecode.GETGLOBAL);
-		append(&vm.code, 0);
-	}
-	{
-		append(&vm.code, bs.Bytecode.ADD);
-	}
-	append(&vm.code, bs.Bytecode.STOP);
-	stack := bs.run(vm);
-	for v, i in stack
-	{
-		printf("[%v]: %v\n", i, v^);
+		stack := bs.run(vm);
+		for v, i in stack
+		{
+			printf("[%v]: %v\n", i, v^);
+		}
 	}
 	
 	i := Indenter{0, 4};
