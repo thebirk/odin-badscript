@@ -18,6 +18,7 @@ Scope :: struct
 }
 
 // TODO: Assert that we give an error if we exceed the maximum allowed locals(256)
+//       This has to be counted on a per-func level, as the function "owns" the locals
 Program :: struct
 {
 	name: string,
