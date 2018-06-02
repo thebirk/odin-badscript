@@ -73,7 +73,7 @@ expect :: proc(using p: ^Parser, kind: TokenKind)
 
 find_rune_from_right :: proc(s: []rune, offset: int, r: rune) -> int
 {
-	for offset >= 0 && s[offset] != r
+	for offset >= 0 && offset < len(s) && s[offset] != r
 	{
 		offset -= 1;
 	}

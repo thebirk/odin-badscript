@@ -88,7 +88,7 @@ runtime_error :: proc(using vm: ^VirtualMachine)
 }
 
 write_f64 :: proc(code: ^[dynamic]Bytecode, number: f64)
-{
+{ //TODO: Decide on endianess
 	v := transmute(u64)number;
 	for i in 0..8
 	{
@@ -105,7 +105,7 @@ read_and_copy_utf8_string :: proc(using vm: ^VirtualMachine) -> string
 }
 
 read_f64 :: proc(using vm: ^VirtualMachine) -> f64
-{
+{ //TODO: Decide on endianess
 	v: u64 = 0;
 	offset := cast(u64)0;
 	for i in 0..8

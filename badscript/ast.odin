@@ -131,6 +131,8 @@ alloc_node :: proc(using p: ^Parser, kind: NodeKind) -> ^Node
 {
 	n := new(Node);
 	n.kind = kind;
+	//TODO: Add all nodes to a list of allocated nodes so that we can quickly free them all
+	//      This we can free strings, etc.
 	return n;
 }
 

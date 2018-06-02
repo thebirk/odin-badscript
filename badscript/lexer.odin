@@ -70,6 +70,7 @@ SourceLoc :: struct
 	filepath: string,
 	line, char: int,
 	fileoffset: int,
+	length: int,
 }
 
 Token :: struct
@@ -113,9 +114,9 @@ read_file :: proc(using lexer: ^Lexer) -> (result := true)
 	return;
 }
 
-make_sourceloc :: proc(using lexer: ^Lexer, _line: int, _char: int, i: int) -> SourceLoc
+make_sourceloc :: proc(using lexer: ^Lexer, _line: int, _char: int, i: int, _length: int) -> SourceLoc
 {
-	return SourceLoc{filename = lexer.filename, filepath = lexer.filepath, line = _line, char = _char, fileoffset = i};
+	return SourceLoc{filename = lexer.filename, filepath = lexer.filepath, line = _line, char = _char, fileoffset = i, length = _length};
 }
 
 make_lexer_from_file :: proc(path: string) -> ^Lexer
@@ -213,7 +214,7 @@ lex :: proc(using lexer: ^Lexer)
 
 		add_double_token :: proc(using lexer: ^Lexer, kind: TokenKind, i: ^int)
 		{
-			append(&lexer.tokens, Token{kind = kind, lexeme = data[i^..i^+2], loc = make_sourceloc(lexer, line, char, i^)});
+			append(&lexer.tokens, Token{kind = kind, lexeme = data[i^..i^+2], loc = make_sourceloc(lexer, line, char, i^, 2)});
 			i^ += 1;
 			char += 1;
 		}
@@ -228,7 +229,7 @@ lex :: proc(using lexer: ^Lexer)
 
 		add_basic_token :: proc(using lexer: ^Lexer, kind: TokenKind, i: int)
 		{
-			append(&lexer.tokens, Token{kind = kind, lexeme = data[i..i+1], loc = make_sourceloc(lexer, line, char, i)});
+			append(&lexer.tokens, Token{kind = kind, lexeme = data[i..i+1], loc = make_sourceloc(lexer, line, char, i, 2)});
 			char += 1;
 		}
 		switch r
@@ -266,7 +267,8 @@ lex :: proc(using lexer: ^Lexer)
 			{
 				lexer_error(lexer, "Unexpected end of file while lexing string!");	
 			}
-			append(&lexer.tokens, Token{kind = TokenKind.STRING, lexeme = data[start..i], loc = make_sourceloc(lexer, line, char, i)});
+			lexeme := data[start..i];
+			append(&lexer.tokens, Token{kind = TokenKind.STRING, lexeme = lexeme, loc = make_sourceloc(lexer, line, char, start+1, len(lexeme))});
 			char += i - start;
 
 			continue;
@@ -279,7 +281,8 @@ lex :: proc(using lexer: ^Lexer)
 			{
 				i += 1;
 			}
-			append(&lexer.tokens, Token{kind = TokenKind.NUMBER, lexeme = data[start..i], loc = make_sourceloc(lexer, line, char, i)});
+			lexeme := data[start..i];
+			append(&lexer.tokens, Token{kind = TokenKind.NUMBER, lexeme = lexeme, loc = make_sourceloc(lexer, line, char, start+1, len(lexeme))});
 			char += i - start;
 			i -= 1;
 
@@ -293,7 +296,8 @@ lex :: proc(using lexer: ^Lexer)
 			{
 				i += 1;
 			}
-			append(&lexer.tokens, Token{kind = TokenKind.IDENT, lexeme = data[start..i], loc = make_sourceloc(lexer, line, char, i)});
+			lexeme := data[start..i];
+			append(&lexer.tokens, Token{kind = TokenKind.IDENT, lexeme = lexeme, loc = make_sourceloc(lexer, line, char, start+1, len(lexeme))});
 			char += i - start;
 			i -= 1;
 			
@@ -304,7 +308,7 @@ lex :: proc(using lexer: ^Lexer)
 		char += 1;
 	}
 	
-	append(&lexer.tokens, Token{kind = TokenKind.EOF, loc = make_sourceloc(lexer, line, char, len(data))});
+	append(&lexer.tokens, Token{kind = TokenKind.EOF, loc = make_sourceloc(lexer, line, char, len(data), 0)});
 	
 	for i := 0; i < len(lexer.tokens); i += 1
 	{

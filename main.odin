@@ -314,7 +314,7 @@ main :: proc()
 	}*/
 	nodes := bs.parse(parser);
 	
-	program := bs.make_program(parser.lexer.filename, nodes);
+	program := bs.make_program(parser.lexer.filename, nodes, parser.lexer.data[..]);
 	vm := bs.make_vm(program.code[..], len(program.global_scope.variables));
 	if true
 	{
