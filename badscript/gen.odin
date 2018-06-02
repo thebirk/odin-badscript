@@ -9,6 +9,10 @@ Variable :: struct
 	name: string,
 	index: u32,
 	is_global: bool,
+	
+	is_func: bool,
+	args: int,
+	
 }
 
 Function :: struct
@@ -23,23 +27,8 @@ Scope :: struct
 	variables: [dynamic]Variable,
 }
 
-// TODO: This is messy. Figure out a better way to handle scopes and locals as its a little
-//       more complex than you thought at first. Lets say we have a scope which belong to a
-//       function. We add a few locals and we now have 3 of them. Then we create a block
-//       inside the function and add a few more of them. Problem is now those variables 
-//       have local indicis starting from zero again and we are overwriting the parent scope
-//       variables. bummer...
-//
-//       Heres what I think you should do. Use the function as a sort of data storage for the scope.
-//       And all it holds are the variable references, so when the scope need a new variable
-//       it ask the function for a local index. This way the Scope can still check if the 
-//       name is in the current scope but scopes are no longer overwriting each other.
-
 // TODO: Figure out a way so that we can call from other vms, that way we dont have to compile everything into one vm
 //       This allows us to store things like the vm in bytecode form and save some time.
-
-// TODO: Assert that we give an error if we exceed the maximum allowed locals(256)
-//       This has to be counted on a per-func level, as the function "owns" the locals
 Program :: struct
 {
 	name: string,
@@ -277,7 +266,7 @@ generate_func :: proc(program: ^Program, node: ^Node)
 	
 	generate_block(program, node.func.block);
 	//TODO: We could insert a PUSHNULL safely here right?
-	//      Or would we be leaking nulls in the stack slowly but surely?
+	//      Or would we be leaking nulls in the stack slowly?
 	append(&program.code, Bytecode.RETURN);
 }
 
