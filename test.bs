@@ -1,2 +1,10 @@
 var c = 2;
-var a = 3 + d;
+var a = 3 + c;
+
+func main(args)
+{
+	var g = 2 + a;
+	g = 3 + g;
+	var d = g + c;
+	var string = oops;
+}

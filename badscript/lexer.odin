@@ -229,7 +229,7 @@ lex :: proc(using lexer: ^Lexer)
 
 		add_basic_token :: proc(using lexer: ^Lexer, kind: TokenKind, i: int)
 		{
-			append(&lexer.tokens, Token{kind = kind, lexeme = data[i..i+1], loc = make_sourceloc(lexer, line, char, i, 2)});
+			append(&lexer.tokens, Token{kind = kind, lexeme = data[i..i+1], loc = make_sourceloc(lexer, line, char, i+1, 1)});
 			char += 1;
 		}
 		switch r

@@ -7,10 +7,8 @@ import "core:unicode/utf8"
 Variable :: struct
 {
 	name: string,
-	index: int,
+	index: u32,
 	is_global: bool,
-	is_func: bool,
-	nodekind: NodeKind,
 }
 
 Function :: struct
@@ -21,7 +19,8 @@ Function :: struct
 Scope :: struct
 {
 	parent: ^Scope,
-	variables: [dynamic]int,
+	function: ^Function,
+	variables: [dynamic]Variable,
 }
 
 // TODO: This is messy. Figure out a better way to handle scopes and locals as its a little
@@ -49,6 +48,7 @@ Program :: struct
 	current_scope: ^Scope,
 	lexer_data: []rune,
 	code: [dynamic]Bytecode,
+	start_address: u32,
 }
 
 gen_error :: proc(using program: ^Program, node: ^Node, fmt_str: string, args: ...any)
@@ -108,9 +108,10 @@ make_scope :: proc(program: ^Program) -> ^Scope
 }
 
 // Returns the new scope
-push_scope :: proc(program: ^Program) -> ^Scope
+push_scope :: proc(program: ^Program, function: ^Function) -> ^Scope
 {
 	scope := make_scope(program);
+	scope.function = function;
 	scope.parent = program.current_scope;
 	program.current_scope = scope;
 	return scope;
@@ -125,15 +126,13 @@ pop_scope :: proc(program: ^Program) -> ^Scope
 	return program.current_scope;
 }
 
-scope_get :: proc(program: ^Program, function: ^Function, name: string) -> ^Variable
-{ // Traverses up the scope and finds the variable, returns nil if we dont find any.
-  // Keep in mind the returned value is invalited when this scope is popped
+scope_get :: proc(program: ^Program, name: string) -> ^Variable
+{
 	scope := program.current_scope;
 	for scope != nil
 	{
-		for index in scope.variables
+		for v, it in scope.variables
 		{
-			v := &function.variables[index];
 			if v.name == name
 			{
 				return &scope.variables[it];
@@ -145,63 +144,148 @@ scope_get :: proc(program: ^Program, function: ^Function, name: string) -> ^Vari
 	return nil;
 }
 
-reserve_local :: proc(program: ^Program, function: ^Function, n: ^Node) -> int
+scope_add :: proc(program: ^Program, name: string, n: ^Node) -> ^Variable
 {
-	if len(function.variables < 256)
+	scope := program.current_scope;
+	
+	if scope.function != nil
 	{
-		index := len(function.variables);
-		append(&function.variables, Variable{});
-		return index;
+		//TODO: Check for duplicates in current scope
+		
+		// Local function
+		if len(scope.function.variables) < 256
+		{
+			index := cast(u32) len(scope.function.variables);
+			v := Variable{
+				name = name,
+				index = index,
+				is_global = false,
+			};
+			append(&scope.function.variables, v);
+			append(&scope.variables, v);
+			return &scope.function.variables[index];
+		}
+		else
+		{
+			gen_error(program, n, "Too many local variables. You can only have a maximum of 256.");
+			return nil;
+		}
 	}
 	else
 	{
-		gen_error(program, n, "Too many locals. You can only have a total of 256 locals!");
-		return -1;
+		index := cast(u32) len(scope.variables);
+		// Global scope
+		v := Variable{
+			name = name,
+			index = index,
+			is_global = true,
+		};
+		append(&scope.variables, v);
+		return &scope.variables[index];
 	}
 }
 
-scope_add :: proc(program: ^Program, function: ^Function, _name: string, n: ^Node) -> ^Variable
-{ // Returns index of the added variable
-	_is_global := program.global_scope == program.current_scope;
-	_is_func := n.kind == NodeKind.FUNC;
-	index := reserve_local(program, function, n);
-	v := Variable{
-		name = _name,
-		index = index,
-		is_global = _is_global,
-		is_func = _is_func,
-		nodekind = n.kind,
-	};
-	function.variables[index] = v;
-	append(&program.current_scope.variables, index);
-	return &function.variables[index];
-}
-
-generate_block :: proc(using program: ^Program, node: ^Node)
+generate_block :: proc(using program: ^Program, block_node: ^Node)
 {
-	assert(node.kind == NodeKind.BLOCK);
-	push_scope(program);
-	
+	assert(block_node.kind == NodeKind.BLOCK);
+	push_scope(program, program.current_scope.function);
+	for n in block_node.block.stmts
+	{
+		using NodeKind;
+		switch n.kind {
+		case VAR:
+		{
+			name := make_string_from_runes(n._var.name);
+			v := scope_add(program, name, n);
+			generate_expr(program, n._var.expr);
+			append(&program.code, Bytecode.SETLOCAL);
+			append(&program.code, cast(Bytecode) v.index);
+		}
+		case ASSIGN:
+		{
+			using n.assign;
+			if lhs.kind != NodeKind.NAME && lhs.kind != NodeKind.FIELD && lhs.kind != NodeKind.INDEX
+			{
+				gen_error(program, lhs, "Cannot assign to left side of assignment!");
+			}
+			
+			switch lhs.kind {
+			case NodeKind.NAME:
+			{
+				name := make_string_from_runes(lhs.name.name);
+				v := scope_get(program, name);
+				if v == nil
+				{
+					gen_error(program, lhs, "Undeclared variable: '%s'", name);
+				}
+				else
+				{
+					generate_expr(program, rhs);
+					if v.is_global
+					{
+						append(&program.code, Bytecode.SETGLOBAL);
+					}
+					else
+					{
+						append(&program.code, Bytecode.SETLOCAL);
+					}
+					append(&program.code, cast(Bytecode) v.index);
+				}
+			}
+			case NodeKind.FIELD:
+			{
+				assert(false, "Incomplete");
+			}
+			case NodeKind.INDEX:
+			{
+				assert(false, "Incomplete");
+			}
+			case: assert(false, "Invalid switch case");
+			}
+		}
+		case IF:
+		{
+			assert(false, "incomplete!");
+		}
+		case BLOCK:
+		{
+			push_scope(program, program.current_scope.function);
+			generate_block(program, n);
+			pop_scope(program);
+		}
+		case: assert(false, "Incomplete switch");
+		}
+	}
 	pop_scope(program);
 }
 
 generate_func :: proc(program: ^Program, node: ^Node)
 {
 	assert(node.kind == NodeKind.FUNC);
-	address := len(program.code) + 1;
+	address := cast(u32)len(program.code);
 	name := make_string_from_runes(node.func.name);
-	function := new(Function);
+	
 	v := scope_add(program, name, node);
 	v.index = address;
+	
+	function := new(Function);
+	program.current_scope.function = function;
+	
+	//TODO: Register arguments as locals
+	//      I guess we should pass args on the stack
+	//      and automatically place them into their respective locals
+	
+	generate_block(program, node.func.block);
+	//TODO: We could insert a PUSHNULL safely here right?
+	//      Or would we be leaking nulls in the stack slowly but surely?
+	append(&program.code, Bytecode.RETURN);
 }
 
 generate_bytecode_for_program :: proc(using program: ^Program)
 {
-	// Where do we put this code? At the start of main()?
+	// Where do we put this code? At the start of main()? yes!
 	
 	{
-		// I think we should only do this for func, and replace used addresses later.
-		// Populate the global scope before generating code from the global scope
 		for n in program.top_levels
 		{
 			switch n.kind {
@@ -210,29 +294,6 @@ generate_bytecode_for_program :: proc(using program: ^Program)
 				name := make_string_from_runes(n._var.name);
 				scope_add(program, name, n);
 			}
-			case NodeKind.FUNC:
-			{
-				name := make_string_from_runes(n.func.name);
-				scope_add(program, name, n);
-			}
-			case: assert(false, "Invalid switch case");
-			}
-		}
-	}
-	{
-		// Generate code for global variables
-		for n in program.top_levels
-		{
-			if(n.kind == NodeKind.VAR)
-			{
-				name := make_string_from_runes(n._var.name);
-				v := scope_get(program, name);
-				if n._var.expr != nil
-				{
-					generate_expr(program, n._var.expr);
-					append(&code, Bytecode.SETGLOBAL);
-					append(&code, cast(Bytecode) v.index);
-				}
 			}
 		}
 	}
@@ -244,6 +305,75 @@ generate_bytecode_for_program :: proc(using program: ^Program)
 			if(n.kind == NodeKind.FUNC)
 			{
 				generate_func(program, n);
+			}
+		}
+	}
+	
+	{
+		main: ^Node = nil;
+		for n in program.top_levels
+		{
+			if n.kind == NodeKind.FUNC
+			{
+				if _compare_slices(n.func.name, []rune{'m', 'a', 'i', 'n'})
+				{
+					main = n;
+					break;
+				}
+			}
+		}
+		if main == nil
+		{
+			fmt.printf("Missing main function!\n");
+			os.exit(1);
+		}
+		else
+		{
+			if len(main.func.args) != 1
+			{
+				gen_error(program, main, "main should only take one annd only one argument (args table)!");
+			}
+			else
+			{
+				// I assume the current namespace is the globa namespace
+				// should I set it directly?
+				// Because this will crash if we have unbalanced push/pop_scope calls
+				// which is nice, I guess...
+				v := scope_get(program, "main");
+				if v == nil
+				{
+					assert(false, "A main function node exists but main cant be found in the global scope");
+				}
+				else
+				{
+					program.start_address = cast(u32) len(program.code);
+					{
+						// Generate code for global variables
+						for n in program.top_levels
+						{
+							if(n.kind == NodeKind.VAR)
+							{
+								name := make_string_from_runes(n._var.name);
+								v := scope_get(program, name);
+								if n._var.expr != nil
+								{
+									generate_expr(program, n._var.expr);
+									append(&code, Bytecode.SETGLOBAL);
+									append(&code, cast(Bytecode) v.index);
+								}
+							}
+						}
+					}
+					// Call main function
+					append(&program.code, Bytecode.CALL);
+					// TODO: We need a way to resolve function address later, that way we support out-of-order func calls
+					//       we dont want out-of-order for globals as that's "too" much of a hassle
+					write_u32(&program.code, v.index); // Address of main
+					// TODO: We should probably store the number of
+					// locals and arguments in the Variable of a function
+					append(&program.code, 2); // Number of locals
+					append(&program.code, Bytecode.STOP);
+				}
 			}
 		}
 	}
@@ -294,7 +424,6 @@ generate_expr :: proc(using program: ^Program, n: ^Node)
 		if v == nil
 		{
 			gen_error(program, n, "Undeclared variable: '%s'", name);
-			assert(false, "Handle error and display call stack, and print error on n.loc");
 		}
 		if v.is_global
 		{

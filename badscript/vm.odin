@@ -26,6 +26,7 @@ enough args:
 
 Bytecode :: enum u8
 {
+	INVALID_OP,
 	PUSHNUMBER,
 	PUSHNULL,
 	PUSHTRUE,
@@ -57,13 +58,20 @@ Bytecode :: enum u8
 	STOP,
 }
 
+StackFrame :: struct
+{
+	return_address: u32,
+	locals: [dynamic]^Value,
+}
+
 // We should have some sort of frame call stack
 VirtualMachine :: struct
 {
 	code: []Bytecode,
 	stack: [dynamic]^Value,
 	globals: [dynamic]^Value,
-	ip: int,
+	callstack: [dynamic]StackFrame,
+	ip: u32,
 	running: bool,
 }
 
@@ -97,6 +105,39 @@ write_f64 :: proc(code: ^[dynamic]Bytecode, number: f64)
 	}
 }
 
+write_u32 :: proc(code: ^[dynamic]Bytecode, v: u32)
+{
+	for i in 0..4
+	{
+		append(code, cast(Bytecode) (v & 0xFF));
+		v = v >> 8;
+	}
+}
+
+read_u32 :: proc(using vm: ^VirtualMachine) -> u32
+{
+	v: u32 = 0;
+	offset := cast(u32)0;
+	for i in 0..4
+	{
+		v |= cast(u32) code[ip] << offset;
+		offset += 8;
+		ip += 1;
+	}
+	return v;
+}
+
+write_string :: proc(code: ^[dynamic]Bytecode, s: string)
+{
+	assert(false, "Revise this proc");
+	// U32 ought to be enough for badscripts
+	length := u32(len(s));
+	data := transmute([]Bytecode)cast([]u8)s;
+	write_u32(code, length);
+	append(code, ...data);
+}
+
+
 read_and_copy_utf8_string :: proc(using vm: ^VirtualMachine) -> string
 {
 	//TODO: We should probably prefix strings with 
@@ -124,9 +165,11 @@ read_u8 :: proc(using vm: ^VirtualMachine) -> u8
 	return v;
 }
 
-run :: proc(using vm: ^VirtualMachine) -> [dynamic]^Value
+run :: proc(using vm: ^VirtualMachine, start_ip: u32) -> [dynamic]^Value
 {
+	ip = start_ip;
 	running = true;
+	fmt.printf("Running vm with %d bytecodes\n", len(vm.code));
 	for running
 	{
 		op := code[ip];
@@ -135,6 +178,8 @@ run :: proc(using vm: ^VirtualMachine) -> [dynamic]^Value
 		fmt.printf("Bytecode: %v", op);
 		using Bytecode;
 		switch op {
+		case INVALID_OP:
+			assert(false);
 		case STOP:
 			running = false;
 		case PUSHNUMBER:
@@ -163,6 +208,32 @@ run :: proc(using vm: ^VirtualMachine) -> [dynamic]^Value
 		case SETGLOBAL:
 			global := read_u8(vm);
 			globals[global] = pop(&stack);
+		case SETLOCAL:
+			v := pop(&stack);
+			l := read_u8(vm);
+			callstack[len(callstack)-1].locals[l] = v;
+		case GETLOCAL:
+			l := read_u8(vm);
+			append(&stack, callstack[len(callstack)-1].locals[l]);
+		case CALL:
+		{
+			address := read_u32(vm);
+			locals := read_u8(vm);
+			ret := ip;
+			//fmt.printf("\nCALL: address: %d, locals: %d, return_address: %d\n", address, locals, ret);
+			sf := StackFrame{return_address = ret};
+			for i in 0..locals
+			{
+				append(&sf.locals, nil);
+			}
+			append(&callstack, sf);
+			ip = address;
+		}
+		case RETURN:
+			sf := pop(&callstack);
+			ip = sf.return_address;
+			free(sf.locals);
+		case: fmt.printf("INVALID OP CASE: %d", op);
 		}
 		
 		fmt.printf(", stack: %v\n", stack);

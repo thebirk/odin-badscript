@@ -318,7 +318,7 @@ main :: proc()
 	vm := bs.make_vm(program.code[..], len(program.global_scope.variables));
 	if true
 	{
-		stack := bs.run(vm);
+		stack := bs.run(vm, program.start_address);
 		for v, i in stack
 		{
 			printf("[%v]: %v\n", i, v^);
